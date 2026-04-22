@@ -7,13 +7,16 @@
 
 */
 
+// I2C can be switched out for 16-pin lcd depending on hardware
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
+
+// using digital pins for serial communication from R3<->R4
 #include <SoftwareSerial.h>
 
 //  DEFINE OWN PIN VALUES
-#define btn1_pin 12 
-#define btn2_pin 4 
+#define btnL_pin 12 
+#define btnR_pin 4 
 #define trigPin 8 
 #define echoPin 7 
 #define rxPin 9
@@ -22,21 +25,71 @@
 LiquidCrystal_I2C lcd(0x27,  16, 2);
 SoftwareSerial mySerial (rxPin, txPin);
 
+// Global vals for determining distance from ultrasonic sensor
 float duration, distance;
 
+// Communication Variables
+// We will be using bitmasking for latency worries
+unsigned int send;
+unsigned int receive;
+
+// Game logic related variables
+int game_state = 0;
+
+// Button variables
+int btnL_state, btnR_state;
+int btnL_state_prev = LOW, btnR_state_prev = LOW;
+unsigned long lastDebounceTimeL = 0, lastDebounceTimeR = 0;
+unsigned long debounceDelayL = 50, debounceDelayR = 50;
+
 void setup() {
+  // lcd setup
   lcd.init();
   lcd.backlight();
+  lcd.setCursor(0,0);
+
+  // ultrasonic sensor setup
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
 
+  // software serial related setup for serial communcation
   pinMode(rxPin, INPUT);
   pinMode(txPin, OUTPUT);
-  
-  pinMode(btn1_pin,INPUT_PULLUP);
-  pinMode(btn2_pin,INPUT_PULLUP);
+  mySerial.begin(9600);
+
+  // button setup
+  pinMode(btnL_pin,INPUT_PULLUP);
+  pinMode(btnR_pin,INPUT_PULLUP);
 }
 
 void loop() {
-  
+  int btnL_read = digitalRead(btnL_pin);
+  int btnR_read = digitalRead(btnR_pin);
+
+  if(btnL_read != btnL_state_prev) lastDebounceTimeL = millis();
+  if(btnR_read != btnR_state_prev) lastDebounceTimeR = millis();
+
+
+  if( millis() - lastDebounceTimeL > debounceDelayL ){
+    if( btnL_read != btnL_state ){
+      btnL_state = btnL_read;
+
+      lcd.setCursor(0,0);
+      if( btnL_state == LOW){
+        lcd.print("Button Pressed       ");
+      } else {
+        lcd.print("Button Not Pressed   ");
+      }
+
+      btnL_state_prev = btnL_read;
+    }
+  }
+
+  if( mySerial.available() > 0 ){
+    // receive communication
+    // maybe switch states or someething
+  }
+
+  game_state = 0;
+  btnL_state_prev = btnL_read;
 }
