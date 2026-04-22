@@ -47,6 +47,7 @@ void setup() {
   lcd.init();
   lcd.backlight();
   lcd.setCursor(0,0);
+  // lcd.print("Not Pressed      ");
 
   // ultrasonic sensor setup
   pinMode(trigPin, OUTPUT);
@@ -76,12 +77,23 @@ void loop() {
 
       lcd.setCursor(0,0);
       if( btnL_state == LOW){
-        lcd.print("Button Pressed       ");
+        lcd.print("L: Not Pressed  ");
       } else {
-        lcd.print("Button Not Pressed   ");
+        lcd.print("L: Pressed      ");
       }
+    }
+  }
 
-      btnL_state_prev = btnL_read;
+  if( millis() - lastDebounceTimeR > debounceDelayR ){
+    if( btnR_read != btnR_state ){
+      btnR_state = btnR_read;
+
+      lcd.setCursor(0,1);
+      if( btnR_state == LOW){
+        lcd.print("R: Not Pressed  ");
+      } else {
+        lcd.print("R: Pressed      ");
+      }
     }
   }
 
@@ -89,7 +101,7 @@ void loop() {
     // receive communication
     // maybe switch states or someething
   }
-
-  game_state = 0;
+  
   btnL_state_prev = btnL_read;
+  btnR_state_prev = btnR_read;
 }
