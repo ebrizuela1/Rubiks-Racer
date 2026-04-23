@@ -21,20 +21,19 @@
 #define echoPin 7 
 #define rxPin 9
 #define txPin 10
-
 #define distance_threshold 10
 
 LiquidCrystal_I2C lcd(0x27,  16, 2);
 SoftwareSerial mySerial (rxPin, txPin);
 
 // Global vals for determining distance from ultrasonic sensor
-float         duration_uss, distance_uss;
-unsigned int  last_measure = 0;
+float           duration_uss, distance_uss;
+unsigned long   last_measure = 0;
 
 // Communication Variables
 // We will be using bitmasking for latency worries
-uint8_t  send;
-uint8_t  receive;
+uint8_t  send = 0;
+uint8_t  receive = 0;
 
 // Game logic related variables
 int           game_state = 0;
@@ -91,32 +90,14 @@ void loop() {
   if(btnL_read != btnL_state_prev) lastDebounceTimeL = millis();
   if(btnR_read != btnR_state_prev) lastDebounceTimeR = millis();
 
-  if( millis() - lastDebounceTimeL > debounceDelayL ){
-    if( btnL_read != btnL_state ){
-      btnL_state = btnL_read;
-
-      lcd.setCursor(0,0);
-      buttonL_press = (btnL_state == HIGH);
-      // if( btnL_state == LOW){
-      //   lcd.print("L: Not Pressed  ");
-      // } else {
-      //   lcd.print("L: Pressed      ");
-      // }
-    }
+  if( millis() - lastDebounceTimeL > debounceDelayL && btnL_read != btnL_state){
+    btnL_state = btnL_read;
+    buttonL_press = (btnL_state == HIGH);
   }
 
-  if( millis() - lastDebounceTimeR > debounceDelayR ){
-    if( btnR_read != btnR_state ){
-      btnR_state = btnR_read;
-
-      lcd.setCursor(0,1);
-      buttonR_press = (btnR_state == HIGH);
-      // if( btnR_state == LOW){
-      //   lcd.print("R: Not Pressed  ");
-      // } else {
-      //   lcd.print("R: Pressed      ");
-      // }
-    }
+  if( millis() - lastDebounceTimeR > debounceDelayR && btnR_read != btnR_state){
+    btnR_state = btnR_read;
+    buttonR_press = (btnR_state == HIGH);
   }
 
   if( (millis() - last_measure) > 12){
@@ -126,20 +107,18 @@ void loop() {
     delayMicroseconds(10);
     digitalWrite(trigPin, LOW);
     
-    // duration_uss = pulseIn(echoPin, HIGH); 
     duration_uss = pulseIn(echoPin, HIGH, 24000); 
     
     if (duration_uss > 0) {
       distance_uss = (duration_uss*0.0343)/2;
-
       uss_near = (distance_uss < distance_threshold);
-      // Serial.println(distance_uss); 
     }
     last_measure = millis();
   }
   
   // least significant bit in send represents in position conditional
-  if(buttonL_press && buttonR_press && uss_near){
+  bool inPosition = buttonL_press && buttonR_press && uss_near;
+  if( inPosition ){
     send |= (1 << 0);
   } else {
     send &= ~(1 << 0);
@@ -148,48 +127,40 @@ void loop() {
   // only 1 byte is ever needed for commuication since we are using bit masking for information
   if( mySerial.available() > 0 ){
     receive = mySerial.read();
-
     // DEBUG STATEMENT
     Serial.println(receive);
-
   }
 
   // GO TO SPECIFIC GAME STATE BASED ON RECEIVED SIGNAL
-  if( (receive >> 0) & 1 == 1 ){
+  if( ((receive >> 0) & 1) == 1 && game_state != 0 ){
     game_state = 0;
-  } else if ( (receive >> 1) & 1 == 1 ){
+  // } else if ( ((receive >> 1) & 1) == 1 && game_state < 2 ){
+  } else if ( (receive == 2) && game_state < 2 ){
+    startTime = millis();
     game_state = 2;
-  } else if ( (receive >> 2) & 1 == 1 ){
+  } else if ( ((receive >> 2) & 1) == 1 && game_state < 4 ){
     game_state = 4;
-  }
-
-  // SPECIAL CONDITIONS:
-  if( (receive >> 3) & 1 == 1 ){
-    // HANDLE FALSE START
-  }
-  if( (receive >> 4) & 1 == 1 ){
-    // HANDLE WIN
-  } else {
-    // HANDLE LOSS
+    bool winner = (receive >> 4) & 1 == 1;
+    bool falseStart = (receive >> 3) & 1 == 1;
   }
 
   switch(game_state){
     case 0:
     case 1:
-      if(receive>>1 & 1){ // start the game 
-        startTime = millis(); // set game start time
-        game_state = 2;
-      }
+      // if(receive>>1 & 1){ // start the game 
+      //   startTime = millis(); // set game start time
+      //   game_state = 2;
+      // }
       break;
     case 2:
       displayTime(millis() - startTime);
-      if( !(buttonL_press && buttonR_press && uss_near) ){
-        finalTime = millis() - startTime; // freeze time on exit
+      if( !inPosition ){
         game_state = 3;
       }
       break;
     case 3:
-      if(buttonL_press && buttonR_press && uss_near){
+      finalTime = millis() - startTime; // freeze time on exit
+      if( inPosition ){
         send |= (1 << 1);
       } else {
         send &= ~(1 << 1);
@@ -197,13 +168,24 @@ void loop() {
       break;
     case 4:
       displayTime(finalTime);
-      displayResults();
+      // displayResults();
       break;
     default:
       break;
   }
 
-  mySerial.write(send);
+  // lcd.setCursor(0,1);
+  // if(inPosition){
+  //   lcd.print("in position     ");
+  // } else{
+  //   lcd.print("not in position ");
+  // }
+  
+  static uint8_t previous_send = 255;
+  if (send != previous_send) {
+    mySerial.write(send);
+    previous_send = send;
+  }
 
   btnL_state_prev = btnL_read;
   btnR_state_prev = btnR_read;
