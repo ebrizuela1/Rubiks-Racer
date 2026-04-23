@@ -53,6 +53,8 @@ unsigned long lastDebounceTimeL = 0,
 
 unsigned long debounceDelayL = 50, 
               debounceDelayR = 50;
+              
+unsigned long finalTime, startTime;
 
 void setup() {
   // lcd setup
@@ -76,6 +78,9 @@ void setup() {
   pinMode(btnR_pin,INPUT_PULLUP);
 
   // Regular serial for debugging purposes
+
+  // game_state = 2;
+  // startTime = millis();
   Serial.begin(9600);
 }
 
@@ -93,11 +98,11 @@ void loop() {
 
       lcd.setCursor(0,0);
       buttonL_press = (btnL_state == HIGH);
-      if( btnL_state == LOW){
-        lcd.print("L: Not Pressed  ");
-      } else {
-        lcd.print("L: Pressed      ");
-      }
+      // if( btnL_state == LOW){
+      //   lcd.print("L: Not Pressed  ");
+      // } else {
+      //   lcd.print("L: Pressed      ");
+      // }
     }
   }
 
@@ -107,15 +112,14 @@ void loop() {
 
       lcd.setCursor(0,1);
       buttonR_press = (btnR_state == HIGH);
-      if( btnR_state == LOW){
-        lcd.print("R: Not Pressed  ");
-      } else {
-        lcd.print("R: Pressed      ");
-      }
+      // if( btnR_state == LOW){
+      //   lcd.print("R: Not Pressed  ");
+      // } else {
+      //   lcd.print("R: Pressed      ");
+      // }
     }
   }
 
-  // KEEP AN EYE ON THIS FUNCTION IDK IF WE CAN USE DELAYMICROSECONDS
   if( (millis() - last_measure) > 12){
     digitalWrite(trigPin, LOW);
     delayMicroseconds(2);
@@ -145,21 +149,28 @@ void loop() {
   // only 1 byte is ever needed for commuication since we are using bit masking for information
   if( mySerial.available() > 0 ){
     receive = mySerial.read();
-    
+  }
+
+  if ((receive >> 2) & 1) {
+    game_state = 4;
   }
 
   switch(game_state){
     case 0:
     case 1:
+      if(receive>>1 & 1){ // start the game 
+        startTime = millis(); // set game start time
+        game_state = 2;
+      }
       break;
     case 2:
-      displayTime(millis());
+      displayTime(millis() - startTime);
       if( !(buttonL_press && buttonR_press && uss_near) ){
+        finalTime = millis() - startTime; // freeze time on exit
         game_state = 3;
       }
       break;
     case 3:
-      displayTime(millis());
       if(buttonL_press && buttonR_press && uss_near){
         send |= (1 << 1);
       } else {
@@ -167,6 +178,7 @@ void loop() {
       }
       break;
     case 4:
+      displayTime(finalTime);
       displayResults();
       break;
     default:
@@ -180,17 +192,22 @@ void loop() {
 }
 
 void displayResults(){
-
+  lcd.setCursor(0, 1);
+  lcd.print("Game Over!");
 }
 
 void displayTime(unsigned long ms) {
+  char buf[17];
+
   unsigned long centiseconds = (ms / 10) % 100;
   unsigned long seconds      = (ms / 1000) % 60;
   unsigned long minutes      = (ms / 60000);
 
-  char buf[17];
   snprintf(buf, sizeof(buf), "Time:%02lu:%02lu.%02lu   ", minutes, seconds, centiseconds);
+ 
 
   lcd.setCursor(0, 0);
   lcd.print(buf);
+
+  return buf;
 }
