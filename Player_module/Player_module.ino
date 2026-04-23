@@ -28,24 +28,31 @@ LiquidCrystal_I2C lcd(0x27,  16, 2);
 SoftwareSerial mySerial (rxPin, txPin);
 
 // Global vals for determining distance from ultrasonic sensor
-float duration_uss, distance_uss;
-unsigned int last_measure = 0;
+float         duration_uss, distance_uss;
+unsigned int  last_measure = 0;
 
 // Communication Variables
 // We will be using bitmasking for latency worries
-unsigned int send;
-unsigned int receive;
+unsigned int  send;
+unsigned int  receive;
 
 // Game logic related variables
-int game_state = 0;
-int gameOn = 1;
-bool buttonL_press = false, buttonR_press = false, uss_near = false;
+int           game_state = 0;
+bool          buttonL_press = false, 
+              buttonR_press = false, 
+              uss_near = false;
 
 // Button variables
-int btnL_state, btnR_state;
-int btnL_state_prev = LOW, btnR_state_prev = LOW;
-unsigned long lastDebounceTimeL = 0, lastDebounceTimeR = 0;
-unsigned long debounceDelayL = 50, debounceDelayR = 50;
+int           btnL_state, 
+              btnR_state, 
+              btnL_state_prev = LOW, 
+              btnR_state_prev = LOW;
+
+unsigned long lastDebounceTimeL = 0, 
+              lastDebounceTimeR = 0;
+
+unsigned long debounceDelayL = 50, 
+              debounceDelayR = 50;
 
 void setup() {
   // lcd setup
@@ -68,7 +75,7 @@ void setup() {
   pinMode(btnL_pin,INPUT_PULLUP);
   pinMode(btnR_pin,INPUT_PULLUP);
 
-
+  // Regular serial for debugging purposes
   Serial.begin(9600);
 }
 
@@ -116,6 +123,7 @@ void loop() {
     delayMicroseconds(10);
     digitalWrite(trigPin, LOW);
     
+    // duration_uss = pulseIn(echoPin, HIGH); 
     duration_uss = pulseIn(echoPin, HIGH, 24000); 
     
     if (duration_uss > 0) {
@@ -126,16 +134,7 @@ void loop() {
     }
     last_measure = millis();
   }
-
-  if( mySerial.available() > 0 ){
-    // receive communication
-    // maybe switch states or someething
-  }
-
-  if (gameOn) {
-    // displayTime(millis());
-  }
-
+  
   // least significant bit in send represents in position conditional
   if(buttonL_press && buttonR_press && uss_near){
     send |= 1;
@@ -143,8 +142,43 @@ void loop() {
     send &= ~(1);
   }
 
+  // 
+  if( mySerial.available() > 0 ){
+    // receive communication
+    // maybe switch states or someething
+  }
+
+  switch(game_state){
+    case 0:
+    case 1:
+      break;
+    case 2:
+      displayTime(millis());
+      if( !(buttonL_press && buttonR_press && uss_near) ){
+        game_state = 3;
+      }
+      break;
+    case 3:
+      displayTime(millis());
+      if(buttonL_press && buttonR_press && uss_near){
+        send |= 2;
+      } else {
+        send &= ~(2);
+      }
+      break;
+    case 4:
+      displayResults();
+      break;
+    default:
+      break;
+  }
+
   btnL_state_prev = btnL_read;
   btnR_state_prev = btnR_read;
+}
+
+void displayResults(){
+
 }
 
 void displayTime(unsigned long ms) {
