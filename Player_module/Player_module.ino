@@ -64,6 +64,9 @@ void setup() {
   // button setup
   pinMode(btnL_pin,INPUT_PULLUP);
   pinMode(btnR_pin,INPUT_PULLUP);
+
+
+  Serial.begin(9600);
 }
 
 void loop() {
@@ -100,17 +103,21 @@ void loop() {
     }
   }
 
-  // custom logic for receieving distance from ultrasonic sensor w/o blocking call
+  // KEEP AN EYE ON THIS FUNCTION IDK IF WE CAN USE DELAYMICROSECONDS
   if( (millis() - last_measure) > 12){
     digitalWrite(trigPin, LOW);
-    duration_uss = pulseIn(echoPin, HIGH);
-    distance_uss = (duration_uss*0.0343)/2;
-    Serial.println(distance_uss);
-    last_measure = millis();
-  } else if ( (millis() - last_measure) > 2 ){
+    delayMicroseconds(2);
     digitalWrite(trigPin, HIGH);
-  } else {
+    delayMicroseconds(10);
     digitalWrite(trigPin, LOW);
+    
+    duration_uss = pulseIn(echoPin, HIGH, 24000); 
+    
+    if (duration_uss > 0) {
+      distance_uss = (duration_uss*0.0343)/2;
+      Serial.println(distance_uss); 
+    }
+    last_measure = millis();
   }
 
   if( mySerial.available() > 0 ){
