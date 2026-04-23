@@ -22,6 +22,8 @@
 #define rxPin 9
 #define txPin 10
 
+#define distance_threshold 10
+
 LiquidCrystal_I2C lcd(0x27,  16, 2);
 SoftwareSerial mySerial (rxPin, txPin);
 
@@ -37,6 +39,7 @@ unsigned int receive;
 // Game logic related variables
 int game_state = 0;
 int gameOn = 1;
+bool buttonL_press = false, buttonR_press = false, uss_near = false;
 
 // Button variables
 int btnL_state, btnR_state;
@@ -82,6 +85,7 @@ void loop() {
       btnL_state = btnL_read;
 
       lcd.setCursor(0,0);
+      buttonL_press = (btnL_state == HIGH);
       if( btnL_state == LOW){
         lcd.print("L: Not Pressed  ");
       } else {
@@ -95,6 +99,7 @@ void loop() {
       btnR_state = btnR_read;
 
       lcd.setCursor(0,1);
+      buttonR_press = (btnR_state == HIGH);
       if( btnR_state == LOW){
         lcd.print("R: Not Pressed  ");
       } else {
@@ -115,6 +120,8 @@ void loop() {
     
     if (duration_uss > 0) {
       distance_uss = (duration_uss*0.0343)/2;
+
+      uss_near = (distance_uss < distance_threshold);
       Serial.println(distance_uss); 
     }
     last_measure = millis();
@@ -126,9 +133,16 @@ void loop() {
   }
 
   if (gameOn) {
-    displayTime(millis());
+    // displayTime(millis());
   }
-  
+
+  // least significant bit in send represents in position conditional
+  if(buttonL_press && buttonR_press && uss_near){
+    send |= 1;
+  } else {
+    send &= ~(1);
+  }
+
   btnL_state_prev = btnL_read;
   btnR_state_prev = btnR_read;
 }
