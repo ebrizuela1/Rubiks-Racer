@@ -91,7 +91,6 @@ void loop() {
   if(btnL_read != btnL_state_prev) lastDebounceTimeL = millis();
   if(btnR_read != btnR_state_prev) lastDebounceTimeR = millis();
 
-
   if( millis() - lastDebounceTimeL > debounceDelayL ){
     if( btnL_read != btnL_state ){
       btnL_state = btnL_read;
@@ -134,7 +133,7 @@ void loop() {
       distance_uss = (duration_uss*0.0343)/2;
 
       uss_near = (distance_uss < distance_threshold);
-      Serial.println(distance_uss); 
+      // Serial.println(distance_uss); 
     }
     last_measure = millis();
   }
@@ -149,10 +148,29 @@ void loop() {
   // only 1 byte is ever needed for commuication since we are using bit masking for information
   if( mySerial.available() > 0 ){
     receive = mySerial.read();
+
+    // DEBUG STATEMENT
+    Serial.println(receive);
+
   }
 
-  if ((receive >> 2) & 1) {
+  // GO TO SPECIFIC GAME STATE BASED ON RECEIVED SIGNAL
+  if( (receive >> 0) & 1 == 1 ){
+    game_state = 0;
+  } else if ( (receive >> 1) & 1 == 1 ){
+    game_state = 2;
+  } else if ( (receive >> 2) & 1 == 1 ){
     game_state = 4;
+  }
+
+  // SPECIAL CONDITIONS:
+  if( (receive >> 3) & 1 == 1 ){
+    // HANDLE FALSE START
+  }
+  if( (receive >> 4) & 1 == 1 ){
+    // HANDLE WIN
+  } else {
+    // HANDLE LOSS
   }
 
   switch(game_state){
