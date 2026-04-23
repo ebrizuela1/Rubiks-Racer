@@ -26,7 +26,8 @@ LiquidCrystal_I2C lcd(0x27,  16, 2);
 SoftwareSerial mySerial (rxPin, txPin);
 
 // Global vals for determining distance from ultrasonic sensor
-float duration, distance;
+float duration_uss, distance_uss;
+unsigned int last_measure = 0;
 
 // Communication Variables
 // We will be using bitmasking for latency worries
@@ -97,6 +98,19 @@ void loop() {
         lcd.print("R: Pressed      ");
       }
     }
+  }
+
+  // custom logic for receieving distance from ultrasonic sensor w/o blocking call
+  if( (millis() - last_measure) > 12){
+    digitalWrite(trigPin, LOW);
+    duration_uss = pulseIn(echoPin, HIGH);
+    distance_uss = (duration_uss*0.0343)/2;
+    Serial.println(distance_uss);
+    last_measure = millis();
+  } else if ( (millis() - last_measure) > 2 ){
+    digitalWrite(trigPin, HIGH);
+  } else {
+    digitalWrite(trigPin, LOW);
   }
 
   if( mySerial.available() > 0 ){
