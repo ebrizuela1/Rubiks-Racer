@@ -137,15 +137,15 @@ void loop() {
   
   // least significant bit in send represents in position conditional
   if(buttonL_press && buttonR_press && uss_near){
-    send |= 1;
+    send |= (1 << 0);
   } else {
-    send &= ~(1);
+    send &= ~(1 << 0);
   }
 
-  // 
+  // only 1 byte is ever needed for commuication since we are using bit masking for information
   if( mySerial.available() > 0 ){
-    // receive communication
-    // maybe switch states or someething
+    receive = mySerial.read();
+    
   }
 
   switch(game_state){
@@ -161,9 +161,9 @@ void loop() {
     case 3:
       displayTime(millis());
       if(buttonL_press && buttonR_press && uss_near){
-        send |= 2;
+        send |= (1 << 1);
       } else {
-        send &= ~(2);
+        send &= ~(1 << 1);
       }
       break;
     case 4:
