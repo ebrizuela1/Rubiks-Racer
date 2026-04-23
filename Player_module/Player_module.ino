@@ -69,7 +69,7 @@ void setup() {
   pinMode(echoPin, INPUT);
 
   // software serial related setup for serial communcation
-  pinMode(rxPin, INPUT);
+  pinMode(rxPin, INPUT_PULLUP);
   pinMode(txPin, OUTPUT);
   mySerial.begin(9600);
 
@@ -209,5 +209,5 @@ void displayTime(unsigned long ms) {
   lcd.setCursor(0, 0);
   lcd.print(buf);
 
-  return buf;
+  // return buf;
 }
