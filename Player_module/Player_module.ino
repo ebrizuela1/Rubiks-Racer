@@ -33,8 +33,8 @@ unsigned int  last_measure = 0;
 
 // Communication Variables
 // We will be using bitmasking for latency worries
-unsigned int  send;
-unsigned int  receive;
+uint8_t  send;
+uint8_t  receive;
 
 // Game logic related variables
 int           game_state = 0;
@@ -172,6 +172,8 @@ void loop() {
     default:
       break;
   }
+
+  mySerial.write(send);
 
   btnL_state_prev = btnL_read;
   btnR_state_prev = btnR_read;
