@@ -35,6 +35,7 @@ unsigned int receive;
 
 // Game logic related variables
 int game_state = 0;
+int gameOn = 1;
 
 // Button variables
 int btnL_state, btnR_state;
@@ -47,6 +48,7 @@ void setup() {
   lcd.init();
   lcd.backlight();
   lcd.setCursor(0,0);
+  lcd.print("Time: --:--.--  ");
   // lcd.print("Not Pressed      ");
 
   // ultrasonic sensor setup
@@ -101,7 +103,23 @@ void loop() {
     // receive communication
     // maybe switch states or someething
   }
+
+  if (gameOn) {
+    displayTime(millis());
+  }
   
   btnL_state_prev = btnL_read;
   btnR_state_prev = btnR_read;
+}
+
+void displayTime(unsigned long ms) {
+  unsigned long centiseconds = (ms / 10) % 100;
+  unsigned long seconds      = (ms / 1000) % 60;
+  unsigned long minutes      = (ms / 60000);
+
+  char buf[17];
+  snprintf(buf, sizeof(buf), "Time:%02lu:%02lu.%02lu   ", minutes, seconds, centiseconds);
+
+  lcd.setCursor(0, 0);
+  lcd.print(buf);
 }
