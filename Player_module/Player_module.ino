@@ -56,6 +56,10 @@ unsigned long debounceDelayL = 50,
               
 unsigned long finalTime, startTime;
 
+// DEBUG VARS
+char buf[100];
+bool debugMode = false;
+
 void setup() {
   // lcd setup
   lcd.init();
@@ -113,6 +117,11 @@ void loop() {
     if (duration_uss > 0) {
       distance_uss = (duration_uss*0.0343)/2;
       uss_near = (distance_uss < distance_threshold);
+
+      if (debugMode) {
+        sprintf(buf,"Near: %s", uss_near ? "True" : "False");
+        Serial.println(buf);
+      }
     }
     last_measure = millis();
   }
@@ -124,11 +133,21 @@ void loop() {
   } else {
     send &= ~(1 << 0);
   }
+  if (debugMode) {
+    sprintf(buf,"inPosition: %s", uss_near ? "True" : "False");
+    Serial.println(buf);
+  }
+
 
   // only 1 byte is ever needed for commuication since we are using bit masking for information
   if( mySerial.available() > 0 ){
     receive = mySerial.read();
     // DEBUG STATEMENT
+    if (debugMode) {
+      sprintf(buf,"receive: %d", receive);
+      Serial.println(buf);
+    }
+
     // Serial.println(receive);
   }
 
@@ -187,10 +206,15 @@ void loop() {
       break;
   }
   
+
   static uint8_t previous_send = 255;
   if (send != previous_send) {
-    mySerial.write(send);
     previous_send = send;
+  }
+
+  if (debugMode) {
+    sprintf(buf,"Send: %d", send);
+    Serial.println(buf);
   }
 
   btnL_state_prev = btnL_read;
