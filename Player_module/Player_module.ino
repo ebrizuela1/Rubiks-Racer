@@ -209,6 +209,7 @@ void loop() {
 
   static uint8_t previous_send = 255;
   if (send != previous_send) {
+    mySerial.write(send);
     previous_send = send;
   }
 
