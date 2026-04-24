@@ -39,7 +39,8 @@ uint8_t  receive = 0;
 int           game_state = 0;
 bool          buttonL_press = false, 
               buttonR_press = false, 
-              uss_near = false;
+              uss_near = false,
+              winner = false;
 
 // Button variables
 int           btnL_state, 
@@ -128,7 +129,7 @@ void loop() {
   if( mySerial.available() > 0 ){
     receive = mySerial.read();
     // DEBUG STATEMENT
-    Serial.println(receive);
+    // Serial.println(receive);
   }
 
   // GO TO SPECIFIC GAME STATE BASED ON RECEIVED SIGNAL
@@ -160,13 +161,22 @@ void loop() {
       break;
     case 3:
       displayTime(millis() - startTime);
-      if(inPosition){
+      if(inPosition){ // for winning 
         finalTime = millis() - startTime; // freeze time on exit
         game_state = 4;
-
-        send |= (1 << 1);
+        winner = true;
+        
+        send |= (1<<1);
       } else {
         send &= ~(1 << 1);
+        // Serial.println(receive);
+
+        if (receive>>2 & 1) {
+          finalTime = millis() - startTime; // freeze time on exit
+          game_state = 4;
+
+          winner = false;
+        }
       }
       break;
     case 4:
@@ -176,13 +186,6 @@ void loop() {
     default:
       break;
   }
-
-  // lcd.setCursor(0,1);
-  // if(inPosition){
-  //   lcd.print("in position     ");
-  // } else{
-  //   lcd.print("not in position ");
-  // }
   
   static uint8_t previous_send = 255;
   if (send != previous_send) {
@@ -196,7 +199,8 @@ void loop() {
 
 void displayResults(){
   lcd.setCursor(0, 1);
-  lcd.print("Game Over!");
+  if (winner){lcd.print("You Win!");}
+  else{lcd.print("You Lose!");}
 }
 
 void displayTime(unsigned long ms) {
