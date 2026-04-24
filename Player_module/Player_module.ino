@@ -132,35 +132,38 @@ void loop() {
   }
 
   // GO TO SPECIFIC GAME STATE BASED ON RECEIVED SIGNAL
-  if( ((receive >> 0) & 1) == 1 && game_state != 0 ){
-    game_state = 0;
-  // } else if ( ((receive >> 1) & 1) == 1 && game_state < 2 ){
-  } else if ( (receive == 2) && game_state < 2 ){
-    startTime = millis();
-    game_state = 2;
-  } else if ( ((receive >> 2) & 1) == 1 && game_state < 4 ){
-    game_state = 4;
-    bool winner = (receive >> 4) & 1 == 1;
-    bool falseStart = (receive >> 3) & 1 == 1;
-  }
+  // if( ((receive >> 0) & 1) == 1 && game_state != 0 ){
+  //   game_state = 0;
+  // // } else if ( ((receive >> 1) & 1) == 1 && game_state < 2 ){
+  // } else if ( (receive == 2) && game_state < 2 ){
+  //   startTime = millis();
+  //   game_state = 2;
+  // } else if ( ((receive >> 2) & 1) == 1 && game_state < 4 ){
+  //   game_state = 4;
+  //   bool winner = (receive >> 4) & 1 == 1;
+  //   bool falseStart = (receive >> 3) & 1 == 1;
+  // }
 
   switch(game_state){
     case 0:
     case 1:
-      // if(receive>>1 & 1){ // start the game 
-      //   startTime = millis(); // set game start time
-      //   game_state = 2;
-      // }
+      if(receive>>1 & 1){ // start the game 
+        startTime = millis(); // set game start time
+        game_state = 2;
+      }
       break;
     case 2:
       displayTime(millis() - startTime);
-      if( !inPosition ){
+      if(!inPosition){
         game_state = 3;
       }
       break;
     case 3:
-      finalTime = millis() - startTime; // freeze time on exit
-      if( inPosition ){
+      displayTime(millis() - startTime);
+      if(inPosition){
+        finalTime = millis() - startTime; // freeze time on exit
+        game_state = 4;
+
         send |= (1 << 1);
       } else {
         send &= ~(1 << 1);
@@ -168,7 +171,7 @@ void loop() {
       break;
     case 4:
       displayTime(finalTime);
-      // displayResults();
+      displayResults();
       break;
     default:
       break;
@@ -208,6 +211,4 @@ void displayTime(unsigned long ms) {
 
   lcd.setCursor(0, 0);
   lcd.print(buf);
-
-  // return buf;
 }
