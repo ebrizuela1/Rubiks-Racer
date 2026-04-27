@@ -1,4 +1,15 @@
 /*
+  Team: 
+   Edgar Brizuela, ebriz2, 671438415
+   Gael Perez, gpere78, 664791976
+   Auj Bin Faisal, afais, 657825230
+  Abstract:
+     The purpose of this project is to allow two users to compete against one another in a
+  race to see who can solve a rubiks cube faster. It consists of three different arduino
+  microprocessors that use serial communication to send signals to each other. There are LEDs,
+  a 16x2 LCD and a passive buzzer on one arduino, while the other two have a distance sensor to
+  detect whether or not any of the players are done solving their respective cube. Upon winning,
+  the buzzer sounds and the green LED turns on.
   **WARNING** I am using a I2C LCD module so the setup for a regular 16pin LCD will be different from mine
   References:
     https://projecthub.arduino.cc/Isaac100/getting-started-with-the-hc-sr04-ultrasonic-sensor-7cabe1
